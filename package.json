@@ -1,0 +1,14 @@
+{
+  "name": "mars-survival",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interplanetary Survival Guide: Martian Map. Dependency-free browser modules and tests.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "test:ui": "python3 test/ui_test.py",
+    "build": "python3 tools/build_dist.py"
+  },
+  "engines": { "node": ">=20" }
+}

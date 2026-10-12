@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+require "fileutils"
+
+Dir.chdir(File.expand_path("..", __dir__)) do
+  system("bundle check") || system("bundle install") || abort("bundle install failed")
+  FileUtils.mkdir_p(%w[tmp log])
+  puts "Ready. Run: bin/rails server"
+end

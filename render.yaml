@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: mars-survival
+    runtime: docker
+    plan: free
+    healthCheckPath: /up
+    envVars:
+      - key: SECRET_KEY_BASE
+        generateValue: true
+      - key: FORCE_SSL
+        value: "true"

@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interplanetary Survival Guide: Martian Map</title>
+<meta name="description" content="Route planner for a Marswalk in Jezero Crater. Elevation and slope come from the loaded terrain model; radiation, temperature and dust are labelled scenarios.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/app.css?v=2.0.0">
+</head>
+<body>
+<a class="skip" href="#main">Skip to the map</a>
+<header class="site-header">
+  <h1>Interplanetary Survival Guide: Martian Map</h1>
+  <p>A route planner for a Marswalk in Jezero Crater, built from NASA terrain data.</p>
+</header>
+
+<main id="main">
+  <section class="intro" aria-labelledby="intro-h">
+    <h2 id="intro-h" class="visually-hidden">About this map</h2>
+    <div>
+      <h3>Where is it?</h3>
+      <p>Jezero Crater, 18.4° N, 77.4° E: an ancient lake basin and the landing site of the Perseverance rover.</p>
+      <svg class="locator" viewBox="0 0 220 92" role="img" aria-label="Schematic locator. Jezero Crater at 18.4 degrees north, 77.4 degrees east, and Gale Crater at 5.4 degrees south, 137.7 degrees east, on an empty longitude and latitude grid.">
+        <rect x="1" y="1" width="218" height="90" fill="none" stroke="currentColor" stroke-opacity=".35"/>
+        <path d="M55 1V91M110 1V91M165 1V91M1 46H219" stroke="currentColor" stroke-opacity=".2" fill="none"/>
+        <circle cx="47.9" cy="36.8" r="4" class="loc-main"/><text x="54" y="35" font-size="9">Jezero</text>
+        <circle cx="84.4" cy="48.7" r="3" fill="none" stroke="currentColor"/><text x="90" y="58" font-size="9">Gale</text>
+        <text x="3" y="89" font-size="7">0°E</text><text x="105" y="89" font-size="7">180°E</text><text x="200" y="89" font-size="7">360°E</text>
+        <text x="3" y="10" font-size="7">+90°</text><text x="3" y="85" font-size="7" dy="-9">−90°</text>
+      </svg>
+      <p class="fine">Schematic locator: a bare longitude–latitude grid, not a map of Mars.</p>
+    </div>
+    <div>
+      <h3>What does the map show?</h3>
+      <p>Elevation and slope are <b>calculated from the loaded terrain model</b>. The radiation layer is a <b>modeled estimate</b>. Temperature, dust and consumables are <b>scenarios you control</b>, not observations.</p>
+      <p id="terrain-banner" class="banner" role="status"></p>
+    </div>
+    <div>
+      <h3>How do I use it?</h3>
+      <ol>
+        <li>Choose whether a click sets the <b>start</b> or the <b>destination</b>, then click the map.</li>
+        <li>Compare the four route objectives in the table.</li>
+        <li>Open the panels below the map for assumptions, the survival check and data sources.</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="workspace">
+    <section class="map-column" aria-labelledby="map-h">
+      <h2 id="map-h">Map</h2>
+      <div class="toolbar">
+        <fieldset>
+          <legend>Layer</legend>
+          <label><input type="radio" name="layer" value="elevation" checked> Elevation</label>
+          <label><input type="radio" name="layer" value="slope"> Slope</label>
+          <label><input type="radio" name="layer" value="dose"> Radiation (modeled)</label>
+        </fieldset>
+        <fieldset>
+          <legend>A click sets the</legend>
+          <label><input type="radio" name="pointmode" value="start" checked> Start</label>
+          <label><input type="radio" name="pointmode" value="goal"> Destination</label>
+        </fieldset>
+      </div>
+      <div class="map-wrap">
+        <canvas id="map" tabindex="0" role="application" aria-label="Terrain map. Use arrow keys to move the cursor, S to set the start and D to set the destination." aria-describedby="coord-readout"></canvas>
+      </div>
+      <p id="coord-readout" class="readout" aria-live="off">Move over the map to read coordinates, elevation and slope.</p>
+      <div id="legend" class="legend" aria-label="Map legend"></div>
+      <p id="map-message" class="message" role="status"></p>
+
+      <h2>Elevation profile of the selected route</h2>
+      <canvas id="profile" role="img" aria-label="Elevation profile"></canvas>
+      <p id="profile-summary" class="readout"></p>
+    </section>
+
+    <section class="side-column" aria-labelledby="routes-h">
+      <h2 id="routes-h">Routes</h2>
+      <div class="points">
+        <label>Start x (m) <input id="start-x" type="number" step="any"></label>
+        <label>Start y (m) <input id="start-y" type="number" step="any"></label>
+        <label>Destination x (m) <input id="goal-x" type="number" step="any"></label>
+        <label>Destination y (m) <input id="goal-y" type="number" step="any"></label>
+        <button id="apply-points" type="button">Apply points</button>
+      </div>
+      <p class="fine">Coordinates are metres east (x) and south (y) of the north-west corner of the terrain model.</p>
+      <div id="route-list" role="radiogroup" aria-label="Route objectives"></div>
+      <h3>Warnings for the selected route</h3>
+      <ul id="warnings" class="warnings"></ul>
+    </section>
+  </div>
+
+  <section class="panels" aria-label="Details">
+    <details id="panel-survival" open>
+      <summary>Survival check (planning demonstration)</summary>
+      <div class="panel-body">
+        <p class="note">This applies simple arithmetic to assumed consumable endurance. It is a demonstration of planning logic. It is not a validated safety decision, and a GO result does not mean a route is safe for astronauts.</p>
+        <div class="grid3">
+          <label>Suit power at start (%) <input id="res-power" type="range" min="0" max="100" value="90"> <output id="res-power-out">90</output></label>
+          <label>Oxygen at start (%) <input id="res-o2" type="range" min="0" max="100" value="90"> <output id="res-o2-out">90</output></label>
+          <label>Water at start (%) <input id="res-water" type="range" min="0" max="100" value="90"> <output id="res-water-out">90</output></label>
+        </div>
+        <div id="survival" aria-live="polite"></div>
+      </div>
+    </details>
+
+    <details id="panel-scenario">
+      <summary>Scenario and assumptions</summary>
+      <div class="panel-body">
+        <div class="grid3">
+          <label>Local solar time (h) <input id="local-hour" type="range" min="0" max="24" step="0.25" value="12"> <output id="local-hour-out">12.00</output></label>
+          <div><button id="use-now" type="button">Use the computed time at Jezero now</button></div>
+          <label>Dust scenario <select id="dust"></select></label>
+          <label>Radiation scenario <select id="radiation"></select></label>
+          <label>Slope limit (°) <input id="max-slope" type="number" min="1" max="60" step="1" value="25"></label>
+          <label>Flat walking speed (km/h) <input id="walk-speed" type="number" min="0.5" max="8" step="0.1" value="2.5"></label>
+          <label>Required reserve after round trip (%) <input id="req-reserve" type="number" min="0" max="90" step="1" value="30"></label>
+          <label>Power endurance at 100 % (h) <input id="end-power" type="number" min="1" max="48" step="0.5" value="8"></label>
+          <label>Oxygen endurance at 100 % (h) <input id="end-o2" type="number" min="1" max="48" step="0.5" value="8"></label>
+          <label>Water endurance at 100 % (h) <input id="end-water" type="number" min="1" max="48" step="0.5" value="10"></label>
+        </div>
+        <h3>Scenario values at the chosen time</h3>
+        <table id="conditions"></table>
+        <h3>Model parameters and where they come from</h3>
+        <table id="params"></table>
+      </div>
+    </details>
+
+    <details id="panel-science">
+      <summary>Science targets</summary>
+      <div class="panel-body" id="targets"></div>
+    </details>
+
+    <details id="panel-data">
+      <summary>Terrain model and data sources</summary>
+      <div class="panel-body">
+        <h3>Terrain model</h3>
+        <div class="load-row">
+          <button id="load-test" type="button">Load bundled synthetic test terrain</button>
+          <button id="load-jezero" type="button">Load Jezero HiRISE tile</button>
+          <label>Open a file <input id="dem-file" type="file" multiple accept=".json,.img,.lbl"></label>
+        </div>
+        <p class="fine">Accepted: a Mars Survival tile (.json), or a PDS .IMG with its detached .LBL, selected together. Large PDS rasters are read in strips and block-averaged, never held whole in memory.</p>
+        <p id="dem-error" class="error" role="alert"></p>
+        <dl id="terrain-info" class="info"></dl>
+        <h3>Datasets</h3>
+        <table id="sources"></table>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <p>Educational prototype made for the NASA Space Apps Challenge. It is not flight software and is not endorsed by NASA. Terrain in the bundled demo is synthetic. See <code>DATA_SOURCES.md</code> and <code>AI_USAGE.md</code> in the repository.</p>
+</footer>
+
+<script type="module" src="/js/app.js?v=2.0.0"></script>
+</body>
+</html>

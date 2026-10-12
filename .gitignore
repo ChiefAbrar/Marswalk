@@ -1,0 +1,9 @@
+/log/*
+/tmp/*
+!/log/.keep
+!/tmp/.keep
+.bundle
+/vendor/bundle
+.env*
+.vercel
+node_modules
